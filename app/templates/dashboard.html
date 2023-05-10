@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Welcome to your Dashboard</h1>
+  
+  <h2>Quick Stats</h2>
+  <ul>
+    <li>Total Income: {{ total_income }}</li>
+    <li>Total Expenses: {{ total_expenses }}</li>
+    <li>Net Income: {{ total_income-total_expenses }}</li>
+  </ul>
+  
+  <h2>Income</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Description</th>
+        <th>Category</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for income in incomes %}
+        <tr>
+          <td>{{ income.date }}</td>
+          <td>{{ income.amount }}</td>
+          <td>{{ income.description }}</td>
+          <td>{{ income.category.name }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <h2>Expenses</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Description</th>
+        <th>Category</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for expense in expenses %}
+        <tr>
+          <td>{{ expense.date }}</td>
+          <td>{{ expense.amount }}</td>
+          <td>{{ expense.description }}</td>
+          <td>{{ expense.category.name }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

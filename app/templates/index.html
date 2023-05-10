@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="jumbotron">
+    <h1 class="display-4">Welcome to Finance Tracker!</h1>
+    <p class="lead">This is a simple application to track your personal finances.</p>
+    <hr class="my-4">
+    {% if current_user.is_authenticated %}
+    <p>Logged in as: {{ current_user.email }}</p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('logout') }}" role="button">Logout</a>
+    {% else %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}" role="button">Login</a>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}" role="button">Register</a>
+    {% endif %}
+  </div>
+{% endblock %}

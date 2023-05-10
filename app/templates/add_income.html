@@ -1,0 +1,39 @@
+
+{% extends "base.html" %}
+{% block content %}
+  <h1>Add Income</h1>
+  <form method="POST" action="{{ url_for('add_income') }}">
+    {{ form.csrf_token }}
+    <div>
+      <label for="amount">Amount</label>
+      {{ form.amount }}
+      {% for error in form.amount.errors %}
+        <span class="text-danger">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div>
+      <label for="description">Description</label>
+      {{ form.description }}
+      {% for error in form.description.errors %}
+        <span class="text-danger">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div>
+      <label for="date">Date</label>
+      {{ form.date }}
+      {% for error in form.date.errors %}
+        <span class="text-danger">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div>
+      <label for="category">Category</label>
+      {{ form.category }}
+      {% for error in form.category.errors %}
+        <span class="text-danger">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div>
+      <button type="submit">Add</button>
+    </div>
+  </form>
+{% endblock %}
