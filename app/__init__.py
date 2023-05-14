@@ -7,18 +7,14 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
-login_manager = LoginManager(app)
+from app import routes, models, forms
 
-class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
+login_manager = LoginManager(app)
 
 @login_manager.user_loader
 def load_user(user_id):
     # Load user from database or other data source
-    return User(user_id)
-
-from app import routes, models, forms
+    return models.User.query.get(int(user_id))
 
 with app.app_context():
     db.create_all()

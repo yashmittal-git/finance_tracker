@@ -40,6 +40,7 @@ class Expense(db.Model):
     description = db.Column(db.String(255), nullable=False)
     date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'), nullable=False)
+    category = db.relationship('Category', backref='expense',lazy=True)
 
 
 class Category(db.Model):
@@ -50,5 +51,5 @@ class Category(db.Model):
     is_income = db.Column(db.Boolean, nullable=False)
 
     def get_categories(self, user_id):
-        categories = self.query.filter_by(user_id=current_user.id).all()
+        categories = self.query.filter_by(user_id=current_user.user_id).all()
         return categories

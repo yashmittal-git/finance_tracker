@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, abort
 from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db
 from app.models import User, Income, Expense, Category
@@ -7,6 +7,9 @@ from app.forms import LoginForm, RegistrationForm, IncomeForm, ExpenseForm, Cate
 
 @app.route('/')
 def index():
+    # print(current_user.email)
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
     return render_template('index.html', current_user = current_user)
 
 
@@ -35,7 +38,7 @@ def login():
         if user is None or not user.check_password(form.password.data):
             flash('Invalid email or password')
             return redirect(url_for('login'))
-        login_user(user)#, remember=form.remember_me.data)
+        login_user(user, remember=form.remember_me.data)
         return redirect(url_for('dashboard'))
     return render_template('login.html', title='Sign In', form=form)
 
@@ -49,8 +52,8 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    incomes = Income.query.join(Category).add_columns().filter_by(user_id=current_user.id).all()
-    expenses = Expense.query.join(Category).filter_by(user_id=current_user.id).all()
+    incomes = Income.query.join(Category).add_columns().filter_by(user_id=current_user.user_id).all()
+    expenses = Expense.query.join(Category).filter_by(user_id=current_user.user_id).all()
     income_total = sum(income.amount for income in incomes)
     expense_total = sum(expense.amount for expense in expenses)
     for income in incomes:
@@ -63,22 +66,22 @@ def dashboard():
         print(f"Category Name: {income.category.name}")
         print("----------------------------------------")
     print(income_total)
-    return render_template('dashboard.html', incomes=incomes, expenses=expenses, total_income=income_total, total_expenses=expense_total)
+    return render_template('dashboard.html',current_user = current_user, incomes=incomes, expenses=expenses, total_income=income_total, total_expenses=expense_total)
 
 
 @app.route('/income/add', methods=['GET', 'POST'])
 @login_required
 def add_income():
     form = IncomeForm()
-    form.category.choices = [(c.category_id, c.name) for c in Category.query.filter_by(user_id=current_user.id).all()]
+    form.category.choices = [(c.category_id, c.name) for c in Category.query.filter_by(user_id=current_user.user_id).all()]
     if form.validate_on_submit():
         print(form.category.data)
-        income = Income(user_id=current_user.id, amount=form.amount.data, description=form.description.data,
+        income = Income(user_id=current_user.user_id, amount=form.amount.data, description=form.description.data,
                         date=form.date.data, category_id=form.category.data)
         db.session.add(income)
         db.session.commit()
         flash('Your income has been added successfully.', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
     return render_template('add_income.html', title='Add Income', form=form)
 
 
@@ -86,7 +89,7 @@ def add_income():
 @login_required
 def edit_income(income_id):
     income = Income.query.get_or_404(income_id)
-    if income.user_id != current_user.id:
+    if income.user_id != current_user.user_id:
         return redirect(url_for('index'))
     form = IncomeForm(obj=income)
     if form.validate_on_submit():
@@ -97,14 +100,14 @@ def edit_income(income_id):
         db.session.commit()
         flash('Your income has been updated successfully.', 'success')
         return redirect(url_for('index'))
-    return render_template('edit_income.html', title='Edit Income', form=form)
+    return render_template('edit_income.html', title='Edit Income', form=form, income_id = income_id)
 
 
 @app.route('/income/<int:income_id>/delete', methods=['POST'])
 @login_required
 def delete_income(income_id):
     income = Income.query.get_or_404(income_id)
-    if income.user_id != current_user.id:
+    if income.user_id != current_user.user_id:
         return redirect(url_for('index'))
     db.session.delete(income)
     db.session.commit()
@@ -116,14 +119,14 @@ def delete_income(income_id):
 @login_required
 def add_expense():
     form = ExpenseForm()
-    form.category.choices = Category.query.filter_by(user_id=current_user.id).all()
+    form.category.choices = [(c.category_id, c.name) for c in Category.query.filter_by(user_id=current_user.user_id).all()]
     if form.validate_on_submit():
-        expense = Expense(user_id=current_user.id, amount=form.amount.data, description=form.description.data,
-                        date=form.date.data, category_id=form.category.data.category_id)
+        expense = Expense(user_id=current_user.user_id, amount=form.amount.data, description=form.description.data,
+                        date=form.date.data, category_id=form.category.data)
         db.session.add(expense)
         db.session.commit()
         flash('Your expense has been added successfully.', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
     return render_template('add_expense.html', title='Add Expense', form=form)
 
 
@@ -131,7 +134,7 @@ def add_expense():
 @login_required
 def edit_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
-    if expense.user_id != current_user.id:
+    if expense.user_id != current_user.user_id:
         return redirect(url_for('index'))
     form = ExpenseForm(obj=expense)
     if form.validate_on_submit():
@@ -142,14 +145,14 @@ def edit_expense(expense_id):
         db.session.commit()
         flash('Your expense has been updated successfully.', 'success')
         return redirect(url_for('index'))
-    return render_template('edit_expense.html', title='Edit Expense', form=form)
+    return render_template('edit_expense.html', title='Edit Expense', form=form, expense_id = expense_id)
 
 
 @app.route('/expense/<int:expense_id>/delete', methods=['POST'])
 @login_required
 def delete_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
-    if expense.user_id != current_user.id:
+    if expense.user_id != current_user.user_id:
         return redirect(url_for('index'))
     db.session.delete(expense)
     db.session.commit()
@@ -165,7 +168,7 @@ def add_category():
         category = Category(
             name=form.name.data,
             is_income=form.is_income.data,
-            user_id=current_user.id
+            user_id=current_user.user_id
         )
         db.session.add(category)
         db.session.commit()
@@ -179,8 +182,9 @@ def add_category():
 @login_required
 def edit_category(category_id):
     category = Category.query.get_or_404(category_id)
-
-    if category.user_id != current_user.id:
+    print(type(category.user_id), type(current_user.user_id))
+    if str(category.user_id) != str(current_user.user_id):
+        print('abort')
         abort(403)
 
     form = CategoryForm()
@@ -202,7 +206,7 @@ def edit_category(category_id):
 def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
 
-    if category.user_id != current_user.id:
+    if category.user_id != current_user.user_id:
         abort(403)
 
     db.session.delete(category)
@@ -213,14 +217,23 @@ def delete_category(category_id):
 @app.route('/transactions')
 @login_required
 def view_transactions():
-    incomes = Income.query.filter_by(user_id=current_user.id).all()
-    expenses = Expense.query.filter_by(user_id=current_user.id).all()
-    transactions = incomes + expenses
-    transactions.sort(key=lambda x: x.date, reverse=True)
+    incomes = Income.query.filter_by(user_id=current_user.user_id).all()
+    expenses = Expense.query.filter_by(user_id=current_user.user_id).all()
+    transactions = []
+    for income in incomes:
+        transactions.append({'transaction': income, 'type': 'Income'})
+    for expense in expenses:
+        transactions.append({'transaction': expense, 'type': 'Expense'})
+    transactions.sort(key=lambda x: x['transaction'].date, reverse=True)
     return render_template('transactions.html', transactions=transactions)
 
 @app.route('/categories')
 @login_required
 def view_categories():
-    categories = Category.query.filter_by(user_id=current_user.id).all()
+    categories = Category.query.filter_by(user_id=current_user.user_id).all()
     return render_template('categories.html', categories=categories)
+
+@app.route('/<path:path>')
+def catch_all(path):
+    flash('Invalid URL entered', 'error')
+    return redirect(url_for('index'))
